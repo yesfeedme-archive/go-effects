@@ -33,23 +33,38 @@ type SaveOpts struct {
 	ClipToBounds bool
 }
 
+func (i *Image) GetImage() *image.RGBA {
+	return i.img
+}
+
+func (i *Image) SetImage(img *image.RGBA) *Image {
+	i.img = img
+	return i
+}
+
+func (i *Image) ClipToBounds() *Image {
+	final := i
+	final = &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: i.Bounds.Width, Y: i.Bounds.Height},
+		}),
+		Width:  i.Bounds.Width,
+		Height: i.Bounds.Height,
+		Bounds: Rect{X: 0, Y: 0, Width: i.Bounds.Width, Height: i.Bounds.Height},
+	}
+
+	draw.Draw(final.img, final.Bounds.ToImageRect(), i.img, i.Bounds.ToImageRect().Min, draw.Src)
+	return final
+}
+
 // Save saves the image as the file type defined by the extension in the path e.g. ,jpg or .png
 func (i *Image) Save(outPath string, opts SaveOpts) error {
 	ext := strings.ToLower(path.Ext(outPath))
 
 	final := i
 	if opts.ClipToBounds {
-		final = &Image{
-			img: image.NewRGBA(image.Rectangle{
-				Min: image.Point{X: 0, Y: 0},
-				Max: image.Point{X: i.Bounds.Width, Y: i.Bounds.Height},
-			}),
-			Width:  i.Bounds.Width,
-			Height: i.Bounds.Height,
-			Bounds: Rect{X: 0, Y: 0, Width: i.Bounds.Width, Height: i.Bounds.Height},
-		}
-
-		draw.Draw(final.img, final.Bounds.ToImageRect(), i.img, i.Bounds.ToImageRect().Min, draw.Src)
+		final = final.ClipToBounds()
 	}
 
 	switch path.Ext(outPath) {
@@ -102,6 +117,20 @@ func (i *Image) saveAsPNG(path string) error {
 	return nil
 }
 
+func ParseImage(img image.Image) *Image {
+	outImg := image.NewRGBA(img.Bounds())
+	draw.Draw(outImg, img.Bounds(), img, image.Point{}, draw.Over)
+
+	w := img.Bounds().Max.X
+	h := img.Bounds().Max.Y
+	return &Image{
+		img:    outImg,
+		Width:  w,
+		Height: h,
+		Bounds: Rect{X: 0, Y: 0, Width: w, Height: h},
+	}
+}
+
 // LoadImage loads the specified image from disk. Supported file types are png and jpg
 func LoadImage(path string) (*Image, error) {
 	srcReader, err := os.Open(path)
@@ -118,15 +147,5 @@ func LoadImage(path string) (*Image, error) {
 		return nil, fmt.Errorf("failed to close image on load: %s, %s", path, err)
 	}
 
-	outImg := image.NewRGBA(img.Bounds())
-	draw.Draw(outImg, img.Bounds(), img, image.Point{}, draw.Over)
-
-	w := img.Bounds().Max.X
-	h := img.Bounds().Max.Y
-	return &Image{
-		img:    outImg,
-		Width:  w,
-		Height: h,
-		Bounds: Rect{X: 0, Y: 0, Width: w, Height: h},
-	}, nil
+	return ParseImage(img), nil
 }

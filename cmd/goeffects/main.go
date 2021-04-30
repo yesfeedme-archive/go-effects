@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/markdaws/go-effects/pkg/effects"
+	"github.com/yesfeedme-archive/go-effects/pkg/effects"
 )
 
 func main() {

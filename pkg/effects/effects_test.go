@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/markdaws/go-effects/pkg/effects"
 	"github.com/markdaws/go-timing"
 	"github.com/stretchr/testify/require"
+
+	"github.com/yesfeedme-archive/go-effects/pkg/effects"
 )
 
 const cabinPath = "../../test/cabin.jpg"
